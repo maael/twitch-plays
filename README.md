@@ -3,6 +3,7 @@
 git clone git@github.com:maael/neutralinojs-react-tailwind-template.git
 cd neutralinojs-react-tailwind-template
 npm i
+neu update
 npm run dev
 ```
 
