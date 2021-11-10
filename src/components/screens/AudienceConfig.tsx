@@ -3,7 +3,7 @@ import React from 'react'
 export default function AudienceConfigScreen() {
   return (
     <div>
-      <h2 className="text-lg">Audience Settings</h2>
+      <h2 className="text-lg">Audience Settings - Work in progress, does nothing</h2>
       <div className="flex flex-col gap-2">
         <label className="flex flex-row gap-2 items-center">
           <input type="checkbox" />

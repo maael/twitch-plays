@@ -8,29 +8,34 @@ import MainScreen from './components/screens/Main'
 import AudienceConfigScreen from './components/screens/AudienceConfig'
 import ControlsConfigScreen, { ControlConfig } from './components/screens/ControlsConfig'
 
+/**
+ * TODO: Bar for action timing
+ * TODO: Audience division
+ * TODO: Limit to application?
+ * TODO: Test building and compiling for Windows
+ * TODO: Highlight selected action (if any) in chat log
+ */
+
 const DEFAULT_CONTROLS: ControlConfig[] = [
   {
     id: v4(),
     name: 'Right Click',
-    readableScript: 'Right Click',
-    script: 'sendmouse right click',
     command: 'yep',
+    actions: ['Right Click'],
     team: undefined,
   },
   {
     id: v4(),
     name: 'Left Click',
-    readableScript: 'Left Click',
-    script: 'sendmouse left click',
     command: 'lul',
+    actions: ['Click'],
     team: undefined,
   },
   {
     id: v4(),
     name: 'Jump',
-    readableScript: 'Caps Lock',
-    script: 'sendkey capslock press',
     command: 'mousey',
+    actions: ['Space'],
     team: undefined,
   },
 ]
@@ -71,7 +76,7 @@ function getMatchedActions(config: ControlConfig[], chatItems: ChatItem[]) {
 }
 
 export default function App() {
-  const [settings] = useStorage('settings', { waitDuration: 10_000, autoConnect: true })
+  const [settings, setSettings] = useStorage('settings', { waitDuration: 10, autoConnect: true })
   const [client, setClient] = React.useState<ReturnType<typeof chat> | null>(null)
   const [channel, setChannel] = useStorage('channel', '', (c) => (c ? setClient(chat(c)) : null))
   const [chatEvents, resetChat] = useChatEvents()
@@ -88,7 +93,43 @@ export default function App() {
       const actionText = Object.entries(actions)
         .map(([team, action]) => {
           if (!action) return ''
-          window['myApp'].callScript(action.script)
+          const clicks = action.actions
+            .filter((a) => a.endsWith('Click'))
+            .map((c) => `sendmouse ${c.startsWith('Right') ? 'right' : 'left'} click`)
+          const scrolls = action.actions
+            .filter((a) => a.startsWith('Scroll'))
+            .map((s) => `sendmouse wheel ${s.endsWith('Up') ? 120 : -120}`)
+          let keys = action.actions
+            .filter((a) => !a.startsWith('Scroll') && !a.endsWith('Click'))
+            .map((k) => {
+              if (k.startsWith('F')) return k
+              if (k.length === 1 && k.match(/^[a-z0-9]$/)) return k
+              if (k === 'ArrowLeft') return '0x25'
+              if (k === 'ArrowRight') return '0x27'
+              if (k === 'ArrowUp') return '0x26'
+              if (k === 'ArrowDown') return '0x28'
+              const kSafe = k.toLowerCase().replace(' ', '')
+              if (kSafe === 'control') return 'ctrl'
+              if (kSafe === 'space') return 'spc'
+              if (kSafe === 'backspace') return kSafe
+              if (kSafe === 'alt') return kSafe
+              if (kSafe === 'shift') return kSafe
+              if (kSafe === 'escape') return 'esc'
+              if (kSafe === 'enter') return kSafe
+              console.warn('No matching key for', k, kSafe)
+              return ''
+            })
+            .filter(Boolean)
+          const keyCombo = keys.length ? `sendkeypress ${keys.join('+')}` : ''
+          ;([] as string[])
+            .concat(scrolls)
+            .concat(clicks)
+            .concat([keyCombo])
+            .forEach((c) => {
+              if (!c) return
+              console.info('[send]', c)
+              window['myApp'].callScript(c)
+            })
           return `[${team}] ${action.name}`
         })
         .filter(Boolean)
@@ -96,20 +137,22 @@ export default function App() {
       setLastAction(actionText)
       setLastCheckTime(new Date())
       resetChat()
-    }, settings.waitDuration)
+    }, settings.waitDuration * 1000)
     return () => {
       if (interval) clearInterval(interval)
     }
   }, [controls, settings.waitDuration, client])
   return (
-    <Router initialEntries={['/config/controls']}>
+    <Router initialEntries={['/']}>
       <div className="flex flex-row justify-start">
         <div className="flex-1">
-          <Link to="/">
-            <h1 className="text-xl flex flex-row gap-2 items-center text-purple-400">
-              <TwitchIco /> Twitch Plays
-            </h1>
-          </Link>
+          <div className="inline-block">
+            <Link to="/">
+              <h1 className="flex flex-row gap-1 items-center text-white bg-purple-600 rounded-md px-3 py-1 transform hover:scale-105 transition-transform shadow-md">
+                <TwitchIco className="text-2xl" /> <span className="relative -top-0.5">Twitch Plays</span>
+              </h1>
+            </Link>
+          </div>
         </div>
         <form
           className="flex flex-row"
@@ -125,13 +168,13 @@ export default function App() {
           }}
         >
           <input
-            className="bg-gray-700 px-2 py-1"
+            className="bg-gray-700 px-2 py-1 rounded-l-md border-b border-l border-purple-500"
             placeholder="Channel Name"
             value={channel}
             onChange={(e) => setChannel(e.target.value)}
             disabled={!!client}
           />
-          <button className="bg-purple-600 text-white py-1 px-3 rounded-sm transform hover:translate-y-1 transition-transform shadow-md flex flex-row items-center gap-2 w-32 justify-center">
+          <button className="bg-purple-600 text-white py-1 px-3 rounded-r-sm transform hover:scale-105 transition-transform shadow-md flex flex-row items-center gap-2 w-32 justify-center">
             <TwitchIco /> {client ? 'Disconnect' : 'Connect'}
           </button>
         </form>
@@ -144,7 +187,13 @@ export default function App() {
           <ControlsConfigScreen controls={controls} setControls={setControls} />
         </Route>
         <Route path="/">
-          <MainScreen chatEvents={chatEvents} lastAction={lastAction} />
+          <MainScreen
+            chatEvents={chatEvents}
+            lastAction={lastAction}
+            settings={settings}
+            setSettings={setSettings}
+            controlCount={controls.length}
+          />
         </Route>
       </Switch>
     </Router>

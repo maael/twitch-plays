@@ -5,8 +5,7 @@ import { v4 } from 'uuid'
 export interface ControlConfig {
   id: string
   name: string
-  readableScript: string
-  script: string
+  actions: string[]
   command: string
   team?: string
 }
@@ -19,8 +18,8 @@ export default function ControlsConfigScreen({
   setControls: Dispatch<SetStateAction<ControlConfig[]>>
 }) {
   return (
-    <div>
-      <h2>
+    <div className="mt-3">
+      <h2 className="text-center">
         {controls.length} Control{controls.length === 1 ? '' : 's'}
       </h2>
       <div className="flex flex-col gap-3 mt-2">
@@ -46,9 +45,7 @@ export default function ControlsConfigScreen({
         ))}
         <button
           className="flex justify-center items-center py-2 w-full transform hover:translate-y-1 transition-transform"
-          onClick={() =>
-            setControls((c) => c.concat([{ id: v4(), name: '', readableScript: '', script: '', command: '' }]))
-          }
+          onClick={() => setControls((c) => c.concat([{ id: v4(), name: '', command: '', actions: [] }]))}
         >
           <PlusIco />
         </button>
@@ -57,9 +54,56 @@ export default function ControlsConfigScreen({
   )
 }
 
+function KeyCaptureInput({
+  onCaptured,
+  value,
+  ...props
+}: React.HTMLProps<HTMLInputElement> & {
+  value: string[]
+  onCaptured: (captured: string[]) => void
+}) {
+  const [capturing, setCapturing] = React.useState(false)
+  const [captured, setCaptured] = React.useState<string[]>(value || [])
+  return (
+    <input
+      {...props}
+      onFocus={(e) => {
+        e.preventDefault()
+        setCapturing(true)
+        setCaptured([])
+      }}
+      onWheel={(e) => {
+        setCaptured((c) => [...new Set(c.concat(e.deltaY > 0 ? 'Scroll Down' : 'Scroll Up'))])
+      }}
+      onBlur={(e) => {
+        setCapturing(false)
+        onCaptured(captured)
+      }}
+      onKeyDown={(e) => {
+        e.preventDefault()
+        const key = e.key === ' ' ? 'Space' : e.key
+        setCaptured((c) => [...new Set(c.concat(key))])
+      }}
+      onMouseDown={(e) => {
+        if (!capturing) return
+        e.preventDefault()
+        const mouseClickType = e.button === 1 ? 'Middle Click' : e.button === 2 ? 'Right Click' : 'Click'
+        setCaptured((c) => [...new Set(c.concat(mouseClickType))])
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        return false
+      }}
+      placeholder={capturing ? 'Capturing...' : props.placeholder}
+      value={captured.join('+')}
+      onChange={(e) => e.preventDefault()}
+    />
+  )
+}
+
 function ControlRow({ config, onUpdate }: { config: ControlConfig; onUpdate: (update: ControlConfig) => void }) {
   const [item, setItem] = React.useState(config)
-  const { name: actionName, command, readableScript, script: _script, team } = item
+  const { name: actionName, command, team, actions } = item
   useEffect(() => {
     onUpdate(item)
   }, [item])
@@ -77,11 +121,11 @@ function ControlRow({ config, onUpdate }: { config: ControlConfig; onUpdate: (up
         value={command}
         onChange={(e) => setItem((i) => ({ ...i, command: e.target.value }))}
       />
-      <input
+      <KeyCaptureInput
         className="bg-gray-700 px-2 py-1 flex-1"
         placeholder="Action"
-        value={readableScript}
-        onChange={(e) => setItem((i) => ({ ...i, readableScript: e.target.value }))}
+        value={actions}
+        onCaptured={(keys) => setItem((i) => ({ ...i, actions: keys }))}
       />
       <input
         className="bg-gray-700 px-2 py-1 flex-1"
