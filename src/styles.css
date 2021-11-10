@@ -2,14 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-    height: 100%;
+html,
+body {
+  height: 100%;
 }
 
 body {
-    @apply bg-gray-800 text-white flex flex-col;
+  @apply bg-gray-800 text-white flex flex-col;
 }
 
 #app {
-    @apply flex flex-col flex-1;
+  @apply flex flex-col flex-1;
 }

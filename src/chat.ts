@@ -21,7 +21,7 @@ export class ChatEvent extends EventTarget {
 
 export const chatEmitter = new ChatEvent();
 
-export function useChatEvents () {
+export function useChatEvents (): [ChatItem[], () => void] {
   const [chat, setChat] = useState<ChatItem[]>([])
   useEffect(() => {
     function handleChat (d: CustomEvent<ChatItem>) {
