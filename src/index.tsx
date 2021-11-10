@@ -34,6 +34,14 @@ window['myApp'] = {
   },
   onWindowClose: () => {
       Neutralino.app.exit();
+  },
+  callScript: (keys: string) => {
+    console.info('running', keys)
+    Neutralino.os.execCommand(`${(window as any).NL_CWD}/cmd/nircmd.exe ${keys}`, (d) => {
+        console.info('d', d)
+      }, () => {
+        console.error('error')
+      })
   }
 };
 

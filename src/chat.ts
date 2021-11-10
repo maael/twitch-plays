@@ -1,15 +1,46 @@
+import {useCallback, useEffect, useState} from 'react'
 import tmi from 'tmi.js';
 
-const TWITCH_BOT_USER_NAME = '';
-const TWITCH_BOT_OAUTH_TOKEN = '';
+export interface ChatItem {
+  id: string,
+  color: string,
+  displayName: string,
+  isSubscriber: boolean,
+  turbo: boolean,
+  username: string,
+  type: string,
+  msg: string,
+  words: string[]
+}
+
+export class ChatEvent extends EventTarget {
+  emit (data: ChatItem) {
+    this.dispatchEvent(new CustomEvent('chat', {detail: data}))
+  }
+};
+
+export const chatEmitter = new ChatEvent();
+
+export function useChatEvents () {
+  const [chat, setChat] = useState<ChatItem[]>([])
+  useEffect(() => {
+    function handleChat (d: CustomEvent<ChatItem>) {
+      setChat((c) => c.concat(d.detail))
+    }
+    chatEmitter.addEventListener('chat', handleChat)
+    return () => {
+      chatEmitter.removeEventListener('chat', handleChat);
+    }
+  }, [setChat])
+  const resetChat = useCallback(() => {
+    setChat([])
+  }, [setChat])
+  return [chat, resetChat]
+}
 
 export default function init(channel: string) {
   // Define configuration options
   const opts = {
-    identity: {
-      username: TWITCH_BOT_USER_NAME,
-      password: TWITCH_BOT_OAUTH_TOKEN
-    },
     channels: [
       channel
     ]
@@ -30,22 +61,21 @@ export default function init(channel: string) {
     if (self) { return; } // Ignore messages from the bot
 
     // Remove whitespace from chat message
-    const commandName = msg.trim();
+    const words = msg.trim().toLowerCase().split(' ');
 
-    // If the command is known, let's execute it
-    if (commandName === '!dice') {
-      const num = rollDice();
-      client.say(target, `You rolled a ${num}`);
-      console.log(`* Executed ${commandName} command`);
-    } else {
-      console.log(`* Unknown command ${commandName}`);
+    const data: ChatItem = {
+      id: context.id,
+      color: context.color,
+      displayName: context['display-name'],
+      isSubscriber: context.subscriber,
+      turbo: context.turbo,
+      username: context.username,
+      type: context['message-type'],
+      msg,
+      words
     }
-  }
 
-  // Function called when the "dice" command is issued
-  function rollDice() {
-    const sides = 6;
-    return Math.floor(Math.random() * sides) + 1;
+    chatEmitter.emit(data);
   }
 
   // Called every time the bot connects to Twitch chat
