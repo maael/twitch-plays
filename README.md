@@ -1,4 +1,9 @@
-# Neutralinojs React Tailwind Template
+# Twitch Plays
+
+Windows program to allow Twitch chat to trigger configured commands, designed for Twitch Plays style streams.
+
+## Development
+
 ```sh
 git clone git@github.com:maael/neutralinojs-react-tailwind-template.git
 cd neutralinojs-react-tailwind-template
@@ -7,12 +12,10 @@ neu update
 npm run dev
 ```
 
-The simplest template for a Neutralinojs app. It's possible to use your favorite frontend framework using the following steps.
+## Build
 
-- Create a new project using your favorite frontend framework. (Eg: `ng new --directory .`)
-- Make the frontend framework's build path and Neutralino config's `url`, `resourcesPath` the same.
-- Build with the correct base href.
+```sh
+npm run build
+```
 
-# Icon credits
-
-- `trayIcon.png` - Made by [Freepik](https://www.freepik.com) and downloaded from [Flaticon](https://www.flaticon.com)
+This will make a `dist/twitch-plays` directory, that can be zipped and distributed.

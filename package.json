@@ -4,11 +4,14 @@
   "description": "The simplest template for a Neutralinojs app. It's possible to use your favorite frontend framework using the following steps.",
   "main": "index.js",
   "scripts": {
-    "watch-src": "esbuild src/index.jsx --bundle --target=chrome60,firefox60,safari11,edge18 --outfile=resources/js/index.js --watch",
+    "build-js": "esbuild src/index.jsx --bundle --target=chrome60,firefox60,safari11,edge18 --outfile=resources/js/index.js",
+    "watch-src": "npm run build-js --watch",
     "run": "neu run",
     "watch-css": "postcss src/styles.css -o resources/styles.css -w",
     "dev": "run-p run watch-src watch-css",
-    "build": "neu build",
+    "prebuild": "rimraf dist",
+    "postbuild": "make-dir dist/cmd && cpy cmd/nircmd.exe dist/twitch-plays/cmd",
+    "build": "npm run build-js && neu build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -27,11 +30,14 @@
     "@types/tmi.js": "^1.8.0",
     "@types/uuid": "^8.3.1",
     "autoprefixer": "^10.4.0",
+    "cpy-cli": "^3.1.1",
     "esbuild": "^0.13.12",
+    "make-dir-cli": "^3.0.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^8.3.11",
     "postcss-cli": "^9.0.1",
     "react-dom": "^17.0.2",
+    "rimraf": "^3.0.2",
     "tailwindcss": "^2.2.19",
     "typescript": "^4.4.4"
   }
