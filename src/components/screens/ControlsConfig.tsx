@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction, useEffect } from 'react'
-import { FaPlusSquare as PlusIco } from 'react-icons/fa'
+import { FaPlusSquare as PlusIco, FaTimes as RemoveIco } from 'react-icons/fa'
 import { v4 } from 'uuid'
 
 export interface ControlConfig {
@@ -41,10 +41,13 @@ export default function ControlsConfigScreen({
                 .concat(controls.slice(idx + 1))
               setControls(updated)
             }}
+            onRemove={(item) => {
+              setControls((c) => c.filter((i) => i.id !== item.id))
+            }}
           />
         ))}
         <button
-          className="flex justify-center items-center py-2 w-full transform hover:translate-y-1 transition-transform"
+          className="flex justify-center items-center py-2 w-full transform hover:translate-y-1 transition-transform hover:text-green-400 mb-3"
           onClick={() => setControls((c) => c.concat([{ id: v4(), name: '', command: '', actions: [] }]))}
         >
           <PlusIco />
@@ -101,14 +104,22 @@ function KeyCaptureInput({
   )
 }
 
-function ControlRow({ config, onUpdate }: { config: ControlConfig; onUpdate: (update: ControlConfig) => void }) {
+function ControlRow({
+  config,
+  onUpdate,
+  onRemove,
+}: {
+  config: ControlConfig
+  onUpdate: (update: ControlConfig) => void
+  onRemove: (update: ControlConfig) => void
+}) {
   const [item, setItem] = React.useState(config)
   const { name: actionName, command, team, actions } = item
   useEffect(() => {
     onUpdate(item)
   }, [item])
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-2 relative">
       <input
         className="bg-gray-700 px-2 py-1 flex-1"
         placeholder="Command Name"
@@ -128,11 +139,17 @@ function ControlRow({ config, onUpdate }: { config: ControlConfig; onUpdate: (up
         onCaptured={(keys) => setItem((i) => ({ ...i, actions: keys }))}
       />
       <input
-        className="bg-gray-700 px-2 py-1 flex-1"
+        className="bg-gray-700 px-2 py-1 flex-1 mr-7"
         placeholder="Team"
         value={team || 'Default'}
         onChange={(e) => setItem((i) => ({ ...i, team: e.target.value }))}
       />
+      <div className="absolute top-0 bottom-0 right-2 flex items-center">
+        <RemoveIco
+          className="cursor-pointer transform hover:scale-110 hover:text-red-500"
+          onClick={() => onRemove(config)}
+        />
+      </div>
     </div>
   )
 }

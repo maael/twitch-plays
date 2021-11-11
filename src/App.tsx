@@ -5,14 +5,13 @@ import { v4 } from 'uuid'
 import chat, { useChatEvents, ChatItem } from './chat'
 import useStorage from './components/hooks/useStorage'
 import MainScreen from './components/screens/Main'
-import AudienceConfigScreen from './components/screens/AudienceConfig'
+import TeamsConfigScreen from './components/screens/TeamsConfigScreen'
 import ControlsConfigScreen, { ControlConfig } from './components/screens/ControlsConfig'
 
 /**
  * TODO: Audience division
  * TODO: Limit to application?
  * TODO: Test building and compiling for Windows
- * TODO: Highlight selected action (if any) in chat log
  */
 
 const DEFAULT_CONTROLS: ControlConfig[] = [
@@ -179,8 +178,8 @@ export default function App() {
         </form>
       </div>
       <Switch>
-        <Route path="/config/audience">
-          <AudienceConfigScreen />
+        <Route path="/config/teams">
+          <TeamsConfigScreen />
         </Route>
         <Route path="/config/controls">
           <ControlsConfigScreen controls={controls} setControls={setControls} />
@@ -193,6 +192,8 @@ export default function App() {
             setSettings={setSettings}
             controlCount={controls.length}
             lastCheckAt={lastCheckTime}
+            isConnected={!!client}
+            controls={controls}
           />
         </Route>
       </Switch>

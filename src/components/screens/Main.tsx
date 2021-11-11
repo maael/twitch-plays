@@ -2,6 +2,7 @@ import React, { Dispatch, SetStateAction, useEffect } from 'react'
 import { FaArrowRight as RightIco } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import { ChatItem } from '../../chat'
+import { ControlConfig } from './ControlsConfig'
 
 function ProgressBar({
   waitDuration,
@@ -12,11 +13,15 @@ function ProgressBar({
   timeFrom: Date | null
   paused: boolean
 }) {
+  /**
+   * TODO: Set initial progress correctly, based on time from and wait duration and % through
+   */
   const [progress, setProgress] = React.useState(100)
   useEffect(() => {
     setProgress(100)
-  }, [timeFrom])
+  }, [timeFrom, paused])
   useEffect(() => {
+    if (paused) return
     const interval = setInterval(() => {
       setProgress((p) => Math.max(p - 0.1, 0))
     }, (waitDuration / 100) * 100)
@@ -38,6 +43,8 @@ export default function MainScreen({
   setSettings,
   controlCount,
   lastCheckAt,
+  isConnected,
+  controls,
 }: {
   chatEvents: ChatItem[]
   lastAction: string | null
@@ -45,6 +52,8 @@ export default function MainScreen({
   setSettings: Dispatch<SetStateAction<{ waitDuration: number }>>
   controlCount: number
   lastCheckAt: Date | null
+  isConnected: boolean
+  controls: ControlConfig[]
 }) {
   return (
     <>
@@ -52,7 +61,7 @@ export default function MainScreen({
         <div className="px-3 py-1 rounded-md text-center">
           {controlCount} Control{controlCount === 1 ? '' : 's'}
         </div>
-        <div className="px-3 py-1 rounded-md text-center">Audience: 1 Team</div>
+        <div className="px-3 py-1 rounded-md text-center">1 Team</div>
       </div>
       <div className="grid gap-3 grid-cols-3 mt-3">
         <Link to="/config/controls">
@@ -61,7 +70,7 @@ export default function MainScreen({
             <RightIco />
           </div>
         </Link>
-        <Link to="/config/audience">
+        <Link to="/config/teams">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
             <div className="flex-1">Teams</div>
             <RightIco />
@@ -85,7 +94,7 @@ export default function MainScreen({
             {chatEvents.length} message{chatEvents.length === 1 ? '' : 's'}
           </div>
         </div>
-        <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={false} />
+        <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={!isConnected} />
         <div className="relative flex-1">
           {chatEvents.length === 0 ? (
             <span className="relative top-12 left-2">Logs will appear here...</span>
@@ -99,7 +108,7 @@ export default function MainScreen({
                         D
                       </span>
                     </span>
-                    <span style={{ color: c.color }}>[{c.displayName}]</span> {c.msg}
+                    <span style={{ color: c.color }}>[{c.displayName}]</span> {highlightAction(controls, c.msg)}
                   </div>
                 )
               })}
@@ -109,4 +118,26 @@ export default function MainScreen({
       </div>
     </>
   )
+}
+
+function highlightAction(controls: ControlConfig[], msg: string): React.ReactNode[] {
+  const commands = controls.map(({ command }) => command.toLowerCase())
+  const words = msg.split(' ')
+  const matchIdx = words.findIndex((w, i) => {
+    return commands.some((c) => c === w.toLowerCase())
+  }, [])
+  return matchIdx > -1
+    ? [
+        words.slice(0, matchIdx).join(' '),
+        <span
+          key="highlight"
+          className="bg-purple-500 text-white rounded-sm font-bold text-center"
+          style={{ padding: '1px 2px', margin: '0px 4px' }}
+        >
+          {' '}
+          {words[matchIdx]}{' '}
+        </span>,
+        words.slice(matchIdx + 1).join(' '),
+      ]
+    : [msg]
 }
