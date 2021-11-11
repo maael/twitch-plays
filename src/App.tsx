@@ -9,7 +9,6 @@ import AudienceConfigScreen from './components/screens/AudienceConfig'
 import ControlsConfigScreen, { ControlConfig } from './components/screens/ControlsConfig'
 
 /**
- * TODO: Bar for action timing
  * TODO: Audience division
  * TODO: Limit to application?
  * TODO: Test building and compiling for Windows
@@ -193,6 +192,7 @@ export default function App() {
             settings={settings}
             setSettings={setSettings}
             controlCount={controls.length}
+            lastCheckAt={lastCheckTime}
           />
         </Route>
       </Switch>

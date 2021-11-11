@@ -1,7 +1,35 @@
-import React, { Dispatch, SetStateAction } from 'react'
+import React, { Dispatch, SetStateAction, useEffect } from 'react'
 import { FaArrowRight as RightIco } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import { ChatItem } from '../../chat'
+
+function ProgressBar({
+  waitDuration,
+  timeFrom,
+  paused,
+}: {
+  waitDuration: number
+  timeFrom: Date | null
+  paused: boolean
+}) {
+  const [progress, setProgress] = React.useState(100)
+  useEffect(() => {
+    setProgress(100)
+  }, [timeFrom])
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((p) => Math.max(p - 0.1, 0))
+    }, (waitDuration / 100) * 100)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [paused, waitDuration, timeFrom])
+  return (
+    <div className="bg-gray-300 absolute top-8 right-0 left-0 h-2 shadow-md">
+      <div className="bg-purple-600 h-full" style={{ width: `${progress}%` }} />
+    </div>
+  )
+}
 
 export default function MainScreen({
   chatEvents,
@@ -9,12 +37,14 @@ export default function MainScreen({
   settings,
   setSettings,
   controlCount,
+  lastCheckAt,
 }: {
   chatEvents: ChatItem[]
   lastAction: string | null
   settings: { waitDuration: number }
   setSettings: Dispatch<SetStateAction<{ waitDuration: number }>>
   controlCount: number
+  lastCheckAt: Date | null
 }) {
   return (
     <>
@@ -27,25 +57,25 @@ export default function MainScreen({
       <div className="grid gap-3 grid-cols-3 mt-3">
         <Link to="/config/controls">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">Control Configurations</div>
+            <div className="flex-1">Controls</div>
             <RightIco />
           </div>
         </Link>
         <Link to="/config/audience">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">Audience Configuration</div>
+            <div className="flex-1">Teams</div>
             <RightIco />
           </div>
         </Link>
         <div className="w-full shadow-md grid grid-cols-2 items-center overflow-hidden">
           <input
             className="bg-gray-700 px-2 py-1 flex-1 shadow-md outline-none text-right rounded-l-md border-b border-l border-purple-500"
-            placeholder="Wait duration..."
+            placeholder="Wait Time..."
             value={settings.waitDuration}
             type="number"
             onChange={(e) => setSettings((s) => ({ ...s, waitDuration: e.target.valueAsNumber }))}
           />
-          <span className="bg-gray-600 px-2 py-1 rounded-r-md border-b border-gray-600">Wait Duration (s)</span>
+          <span className="bg-gray-600 px-2 py-1 rounded-r-md border-b border-gray-600">Wait (s)</span>
         </div>
       </div>
       <div className="mt-2 rounded-md bg-gray-700 flex-1 flex flex-col relative overflow-hidden">
@@ -55,9 +85,7 @@ export default function MainScreen({
             {chatEvents.length} message{chatEvents.length === 1 ? '' : 's'}
           </div>
         </div>
-        <div className="bg-gray-300 absolute top-8 right-0 left-0 h-2 shadow-md">
-          <div className="bg-purple-600 h-full transition-all" style={{ width: '30%' }} />
-        </div>
+        <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={false} />
         <div className="relative flex-1">
           {chatEvents.length === 0 ? (
             <span className="relative top-12 left-2">Logs will appear here...</span>
