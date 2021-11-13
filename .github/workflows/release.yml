@@ -29,10 +29,10 @@ jobs:
         uses: thedoctor0/zip-release@master
         with:
           type: 'zip'
-          directory: '.'
+          directory: './dist'
           filename: 'twitch-plays.zip'
-          path: dist/twitch-plays
+          path: twitch-plays
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: 'twitch-plays.zip'
+          artifacts: './dist/twitch-plays.zip'
           token: ${{ secrets.GITHUB_TOKEN }}
