@@ -2,11 +2,12 @@ import React from 'react'
 import { FaTwitch as TwitchIco } from 'react-icons/fa'
 import { MemoryRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { v4 } from 'uuid'
-import chat, { useChatEvents, ChatItem } from './chat'
+import chat, { useChatEvents } from './chat'
 import useStorage from './components/hooks/useStorage'
 import MainScreen from './components/screens/Main'
 import TeamsConfigScreen from './components/screens/TeamsConfigScreen'
 import ControlsConfigScreen, { ControlConfig } from './components/screens/ControlsConfig'
+import { translateActionToCommand, getMatchedActions } from './utils'
 
 /**
  * TODO: Audience division
@@ -38,41 +39,6 @@ const DEFAULT_CONTROLS: ControlConfig[] = [
   },
 ]
 
-function getMatchedActions(config: ControlConfig[], chatItems: ChatItem[]) {
-  const commands = config.reduce(
-    (acc, { command, team }) => ({ ...acc, [team || 'default']: (acc[team || 'default'] || []).concat(command) }),
-    {}
-  )
-  const chatCalculations = chatItems.reduce<{ [k: string]: { [k: string]: number } }>((acc, c) => {
-    const team = 'default'
-    const matchedCommand = (commands[team] || []).find((cmd) => c.words.some((w) => w === cmd))
-    if (!matchedCommand) return acc
-    const existingTeam = acc[team] || {}
-    return {
-      ...acc,
-      [team]: {
-        ...existingTeam,
-        [matchedCommand]: (existingTeam[matchedCommand] || 0) + 1,
-      },
-    }
-  }, {})
-  const teamActionSelections = Object.entries(chatCalculations).reduce<{
-    [k: string]: ControlConfig | undefined
-  }>((acc, [cmdTeam, commandWeights]) => {
-    const selectedCommand = (
-      Object.entries(commandWeights)
-        .sort(([_a, aWeight], [_b, bWeight]) => aWeight - bWeight)
-        .pop() || []
-    ).shift()
-    const action = config.find(({ team, command }) => command === selectedCommand && (team || 'default') === cmdTeam)
-    return {
-      ...acc,
-      [cmdTeam]: action,
-    }
-  }, {})
-  return teamActionSelections
-}
-
 export default function App() {
   const [settings, setSettings] = useStorage('settings', { waitDuration: 10, autoConnect: true })
   const [client, setClient] = React.useState<ReturnType<typeof chat> | null>(null)
@@ -88,50 +54,7 @@ export default function App() {
   React.useEffect(() => {
     const interval = setInterval(() => {
       const actions = getMatchedActions(controls, chatEventsRef.current)
-      const actionText = Object.entries(actions)
-        .map(([team, action]) => {
-          if (!action) return ''
-          const clicks = action.actions
-            .filter((a) => a.endsWith('Click'))
-            .map((c) => `sendmouse ${c.startsWith('Right') ? 'right' : 'left'} click`)
-          const scrolls = action.actions
-            .filter((a) => a.startsWith('Scroll'))
-            .map((s) => `sendmouse wheel ${s.endsWith('Up') ? 120 : -120}`)
-          let keys = action.actions
-            .filter((a) => !a.startsWith('Scroll') && !a.endsWith('Click'))
-            .map((k) => {
-              if (k.startsWith('F')) return k
-              if (k.length === 1 && k.match(/^[a-z0-9]$/)) return k
-              if (k === 'ArrowLeft') return '0x25'
-              if (k === 'ArrowRight') return '0x27'
-              if (k === 'ArrowUp') return '0x26'
-              if (k === 'ArrowDown') return '0x28'
-              const kSafe = k.toLowerCase().replace(' ', '')
-              if (kSafe === 'control') return 'ctrl'
-              if (kSafe === 'space') return 'spc'
-              if (kSafe === 'backspace') return kSafe
-              if (kSafe === 'alt') return kSafe
-              if (kSafe === 'shift') return kSafe
-              if (kSafe === 'escape') return 'esc'
-              if (kSafe === 'enter') return kSafe
-              console.warn('No matching key for', k, kSafe)
-              return ''
-            })
-            .filter(Boolean)
-          const keyCombo = keys.length ? `sendkeypress ${keys.join('+')}` : ''
-          ;([] as string[])
-            .concat(scrolls)
-            .concat(clicks)
-            .concat([keyCombo])
-            .forEach((c) => {
-              if (!c) return
-              console.info('[send]', c)
-              window['myApp'].callScript(c)
-            })
-          return `[${team}] ${action.name}`
-        })
-        .filter(Boolean)
-        .join(', ')
+      const actionText = Object.entries(actions).map(translateActionToCommand).filter(Boolean).join(', ')
       setLastAction(actionText)
       setLastCheckTime(new Date())
       resetChat()

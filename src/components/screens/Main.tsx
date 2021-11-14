@@ -2,6 +2,7 @@ import React, { Dispatch, SetStateAction, useEffect } from 'react'
 import { FaArrowRight as RightIco } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import { ChatItem } from '../../chat'
+import Results from '../primitives/Results'
 import { ControlConfig } from './ControlsConfig'
 
 function ProgressBar({
@@ -57,22 +58,18 @@ export default function MainScreen({
 }) {
   return (
     <>
-      <div className="grid gap-2 grid-cols-2 mt-3">
-        <div className="px-3 py-1 rounded-md text-center">
-          {controlCount} Control{controlCount === 1 ? '' : 's'}
-        </div>
-        <div className="px-3 py-1 rounded-md text-center">1 Team</div>
-      </div>
       <div className="grid gap-3 grid-cols-3 mt-3">
         <Link to="/config/controls">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">Controls</div>
+            <div className="flex-1">
+              {controlCount} Control{controlCount === 1 ? '' : 's'}
+            </div>
             <RightIco />
           </div>
         </Link>
         <Link to="/config/teams">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">Teams</div>
+            <div className="flex-1">1 Team</div>
             <RightIco />
           </div>
         </Link>
@@ -87,6 +84,7 @@ export default function MainScreen({
           <span className="bg-gray-600 px-2 py-1 rounded-r-md border-b border-gray-600">Wait (s)</span>
         </div>
       </div>
+      <Results config={controls} chatItems={chatEvents} />
       <div className="mt-2 rounded-md bg-gray-700 flex-1 flex flex-col relative overflow-hidden">
         <div className="bg-gray-600 absolute top-0 right-0 left-0 h-8 flex justify-between px-10 items-center text-white">
           <div>Last action: {lastAction || 'None'}</div>
