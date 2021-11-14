@@ -5,13 +5,14 @@
   "main": "index.js",
   "scripts": {
     "build-js": "esbuild src/index.jsx --bundle --target=chrome60,firefox60,safari11,edge18 --outfile=resources/js/index.js",
+    "build-css": "postcss src/styles.css -o resources/styles.css",
     "watch-src": "esbuild src/index.jsx --bundle --target=chrome60,firefox60,safari11,edge18 --outfile=resources/js/index.js --watch",
     "run": "neu run",
     "watch-css": "postcss src/styles.css -o resources/styles.css -w",
     "dev": "run-p run watch-src watch-css",
     "prebuild": "rimraf dist",
     "postbuild": "make-dir dist/cmd && cpy cmd/nircmd.exe dist/twitch-plays/cmd && rimraf dist/twitch-plays/twitch-plays-linux* dist/twitch-plays/twitch-plays-mac* dist/cmd && move-file dist/twitch-plays/twitch-plays-win_x64.exe dist/twitch-plays/twitch-plays.exe",
-    "build": "npm run build-js && neu build",
+    "build": "npm run build-js && npm run build-css && neu build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
