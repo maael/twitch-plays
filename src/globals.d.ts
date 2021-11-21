@@ -5,3 +5,5 @@ declare const NL_OS: string;
 declare const NL_VERSION: string;
 declare const NL_CVERSION: string;
 declare const NL_MODE: string;
+declare const NL_PID: string;
+declare const NL_ARGS: string[];

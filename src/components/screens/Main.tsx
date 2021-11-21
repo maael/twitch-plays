@@ -1,9 +1,18 @@
 import React, { Dispatch, SetStateAction, useEffect } from 'react'
-import { FaArrowRight as RightIco } from 'react-icons/fa'
+import {
+  FaArrowRight as RightIco,
+  FaChartBar as DemocracyIco,
+  FaClock as ClockIco,
+  FaKeyboard as ControlsIco,
+  FaUsers as TeamIco,
+} from 'react-icons/fa'
+import { GiAnarchy as AnarchyIco } from 'react-icons/gi'
 import { Link } from 'react-router-dom'
+import cls from 'classnames'
 import { ChatItem } from '../../chat'
 import Results from '../primitives/Results'
 import { ControlConfig } from './ControlsConfig'
+import { Settings } from '../../utils'
 
 function ProgressBar({
   waitDuration,
@@ -49,8 +58,8 @@ export default function MainScreen({
 }: {
   chatEvents: ChatItem[]
   lastAction: string | null
-  settings: { waitDuration: number }
-  setSettings: Dispatch<SetStateAction<{ waitDuration: number }>>
+  settings: Settings
+  setSettings: Dispatch<SetStateAction<Settings>>
   controlCount: number
   lastCheckAt: Date | null
   isConnected: boolean
@@ -58,22 +67,31 @@ export default function MainScreen({
 }) {
   return (
     <>
-      <div className="grid gap-3 grid-cols-3 mt-3">
-        <Link to="/config/controls">
+      <div className="grid gap-2 grid-cols-2 mt-3">
+        <Link to="/config/controls" title="Edit controls config">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">
-              {controlCount} Control{controlCount === 1 ? '' : 's'}
+            <div className="flex-1 flex justify-center items-center gap-2">
+              <ControlsIco /> {controlCount} Control{controlCount === 1 ? '' : 's'}
             </div>
             <RightIco />
           </div>
         </Link>
-        <Link to="/config/teams">
+        <Link to="/config/teams" title="Edit teams config">
           <div className="bg-gray-600 px-3 py-1 rounded-md shadow-md flex flex-row items-center transform hover:scale-105 hover:shadow-lg transition-transform cursor-pointer">
-            <div className="flex-1">1 Team</div>
+            <div className="flex-1 flex justify-center items-center gap-2">
+              <TeamIco /> 1 Team
+            </div>
             <RightIco />
           </div>
         </Link>
-        <div className="w-full shadow-md grid grid-cols-2 items-center overflow-hidden">
+      </div>
+      <div className="grid gap-2 grid-cols-2 mt-2">
+        <div
+          className={cls('w-full shadow-md grid grid-cols-2 items-center overflow-hidden', {
+            'opacity-60': settings.mode === 'anarchy',
+          })}
+          title="How long to ready chat for before doing what it says in democracy mode"
+        >
           <input
             className="bg-gray-700 px-2 py-1 flex-1 shadow-md outline-none text-right rounded-l-md border-b border-l border-purple-500"
             placeholder="Wait Time..."
@@ -81,10 +99,38 @@ export default function MainScreen({
             type="number"
             onChange={(e) => setSettings((s) => ({ ...s, waitDuration: e.target.valueAsNumber }))}
           />
-          <span className="bg-gray-600 px-2 py-1 rounded-r-md border-b border-gray-600">Wait (s)</span>
+          <span className="flex justify-start gap-2 items-center bg-gray-600 px-2 py-1 rounded-r-md border-b border-gray-600 cursor-help">
+            <ClockIco /> Wait (s)
+          </span>
+        </div>
+        <div className="w-full shadow-md grid grid-cols-2 items-center overflow-hidden rounded-md">
+          <button
+            className={cls(
+              'flex justify-center items-center gap-1 flex-1 text-center h-full w-full py-1 bg-gray-600 cursor-pointer hover:bg-purple-700',
+              {
+                'bg-purple-600': settings.mode === 'democracy',
+              }
+            )}
+            title="Perform the top voted action in the wait time"
+            onClick={() => setSettings((s) => ({ ...s, mode: 'democracy' }))}
+          >
+            <DemocracyIco style={{ position: 'relative', top: 1 }} /> Democracy
+          </button>
+          <button
+            className={cls(
+              'flex justify-center items-center gap-1 flex-1 text-center h-full w-full py-1 bg-gray-600 cursor-pointer hover:bg-purple-700',
+              {
+                'bg-purple-600': settings.mode === 'anarchy',
+              }
+            )}
+            title="Perform all actions in the wait time"
+            onClick={() => setSettings((s) => ({ ...s, mode: 'anarchy' }))}
+          >
+            <AnarchyIco /> Anarchy
+          </button>
         </div>
       </div>
-      <Results config={controls} chatItems={chatEvents} />
+      <Results mode={settings.mode} config={controls} chatItems={chatEvents} />
       <div className="mt-2 rounded-md bg-gray-700 flex-1 flex flex-col relative overflow-hidden">
         <div className="bg-gray-600 absolute top-0 right-0 left-0 h-8 flex justify-between px-10 items-center text-white">
           <div>Last action: {lastAction || 'None'}</div>

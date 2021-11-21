@@ -1,9 +1,17 @@
 import React from 'react'
-import { getTeamCommandVotes } from '../../utils'
+import { getTeamCommandVotes, Settings } from '../../utils'
 import { ChatItem } from '../../chat'
 import { ControlConfig } from '../screens/ControlsConfig'
 
-export default function Results({ config, chatItems }: { config: ControlConfig[]; chatItems: ChatItem[] }) {
+export default function Results({
+  mode,
+  config,
+  chatItems,
+}: {
+  mode: Settings['mode']
+  config: ControlConfig[]
+  chatItems: ChatItem[]
+}) {
   const results = React.useMemo(() => getTeamCommandVotes(config, chatItems), [config, chatItems])
   const mappedConfig = React.useMemo(() => new Map(config.map((c) => [c.command, c])), [config])
   const totalVotes = React.useMemo(
@@ -13,9 +21,7 @@ export default function Results({ config, chatItems }: { config: ControlConfig[]
   return (
     <div className="mt-2 rounded-md bg-gray-700 flex flex-col">
       <div className="bg-gray-600 flex justify-between px-10 items-center text-white rounded-t-md">
-        <div>
-          {totalVotes} vote{totalVotes === 1 ? '' : 's'}
-        </div>
+        <div>{mode === 'democracy' ? `${totalVotes} vote${totalVotes === 1 ? '' : 's'}` : null}</div>
         <div>
           {chatItems.length} message{chatItems.length === 1 ? '' : 's'}
         </div>

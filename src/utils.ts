@@ -82,3 +82,22 @@ export function translateActionToCommand([team, action]: [string, ControlConfig 
     })
   return `[${team}] ${action.name}`
 }
+
+export interface Settings {
+  waitDuration: number
+  autoConnect: boolean
+  mode: 'democracy' | 'anarchy'
+}
+
+let INSTANCE_ID = 1;
+
+export function setInstance (i: number) {
+  if (typeof i === 'number' && !isNaN(i)) {
+    INSTANCE_ID = i
+    console.info('[instance:set]', i)
+  }
+}
+
+export function getInstance () {
+  return INSTANCE_ID;
+}
