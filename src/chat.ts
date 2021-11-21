@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from 'react'
 import tmi from 'tmi.js';
+import { ControlConfig } from './components/screens/ControlsConfig';
 
 export interface ChatItem {
   id: string,
@@ -21,17 +22,18 @@ export class ChatEvent extends EventTarget {
 
 export const chatEmitter = new ChatEvent();
 
-export function useChatEvents (): [ChatItem[], () => void] {
+export function useChatEvents (onChat: (chat: ChatItem) => void): [ChatItem[], () => void] {
   const [chat, setChat] = useState<ChatItem[]>([])
   useEffect(() => {
     function handleChat (d: CustomEvent<ChatItem>) {
       setChat((c) => c.concat(d.detail))
+      onChat(d.detail)
     }
     chatEmitter.addEventListener('chat', handleChat)
     return () => {
       chatEmitter.removeEventListener('chat', handleChat);
     }
-  }, [setChat])
+  }, [setChat, onChat])
   const resetChat = useCallback(() => {
     setChat([])
   }, [setChat])
@@ -84,3 +86,8 @@ export default function init(channel: string) {
   }
   return client;
 };
+
+export function getCommandFromChat (controls: ControlConfig[], chat: ChatItem) {
+  const words = chat.msg.split(' ')
+  return controls.find(({ command }) => words.some((w) => w.toLowerCase() === command.toLowerCase()))
+}

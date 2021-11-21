@@ -1,7 +1,7 @@
 import React from 'react'
 import { MemoryRouter as Router, Switch, Route } from 'react-router-dom'
 import { v4 } from 'uuid'
-import chat, { useChatEvents } from './chat'
+import chat, { ChatItem, useChatEvents, getCommandFromChat } from './chat'
 import useStorage from './components/hooks/useStorage'
 import MainScreen from './components/screens/Main'
 import TeamsConfigScreen from './components/screens/TeamsConfigScreen'
@@ -47,15 +47,24 @@ export default function App() {
   })
   const [client, setClient] = React.useState<ReturnType<typeof chat> | null>(null)
   const [channel, setChannel] = useStorage('channel', '', (c) => (c ? setClient(chat(c)) : null))
-  const [chatEvents, resetChat] = useChatEvents()
+  const [controls, setControls] = useStorage<ControlConfig[]>('controls', DEFAULT_CONTROLS)
+  const onNewChat = React.useCallback(
+    (chat: ChatItem) => {
+      if (settings.mode === 'democracy') return
+      const command = getCommandFromChat(controls, chat)
+      translateActionToCommand(['default', command])
+    },
+    [settings.mode, controls]
+  )
+  const [chatEvents, resetChat] = useChatEvents(onNewChat)
   const chatEventsRef = React.useRef(chatEvents)
   const [lastCheckTime, setLastCheckTime] = React.useState<Date | null>(null)
-  const [controls, setControls] = useStorage<ControlConfig[]>('controls', DEFAULT_CONTROLS)
   React.useEffect(() => {
     chatEventsRef.current = chatEvents
   }, [chatEvents])
   const [lastAction, setLastAction] = React.useState<string | null>(null)
   React.useEffect(() => {
+    if (settings.mode === 'anarchy') return
     const interval = setInterval(() => {
       const actions = getMatchedActions(controls, chatEventsRef.current)
       const actionText = Object.entries(actions).map(translateActionToCommand).filter(Boolean).join(', ')
@@ -66,7 +75,10 @@ export default function App() {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [controls, settings.waitDuration, client])
+  }, [controls, settings.waitDuration, client, settings.mode])
+  React.useEffect(() => {
+    resetChat()
+  }, [settings.mode])
   React.useEffect(() => {
     window['myApp'].setTitle(channel, !!client)
   }, [channel, client])

@@ -138,12 +138,26 @@ export default function MainScreen({
             {chatEvents.length} message{chatEvents.length === 1 ? '' : 's'}
           </div>
         </div>
-        <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={!isConnected} />
+        {settings.mode === 'democracy' ? (
+          <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={!isConnected} />
+        ) : null}
         <div className="relative flex-1">
           {chatEvents.length === 0 ? (
-            <span className="relative top-12 left-2">Logs will appear here...</span>
+            <span
+              className={cls('relative left-2', {
+                'top-9': settings.mode === 'anarchy',
+                'top-12': settings.mode === 'democracy',
+              })}
+            >
+              Logs will appear here...
+            </span>
           ) : (
-            <div className="absolute top-10 right-0 left-0 bottom-0 overflow-y-scroll px-2 py-3 flex flex-col gap-1">
+            <div
+              className={cls('absolute right-0 left-0 bottom-0 overflow-y-scroll px-2 py-3 flex flex-col gap-1', {
+                'top-6': settings.mode === 'anarchy',
+                'top-10': settings.mode === 'democracy',
+              })}
+            >
               {chatEvents.map((c) => {
                 return (
                   <div key={c.id}>
