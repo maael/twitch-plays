@@ -11,6 +11,7 @@ window['myApp'] = {
   },
   callScript: (keys: string) => {
     console.info('[cmd:run]', `${(window as any).NL_CWD}/cmd/nircmd.exe ${keys}`)
+    Neutralino.debug.log(`${(window as any).NL_CWD}/cmd/nircmd.exe ${keys}`)
     Neutralino.os.execCommand(
       `${(window as any).NL_CWD}/cmd/nircmd.exe ${keys}`,
       (d) => {
@@ -18,6 +19,7 @@ window['myApp'] = {
       },
       () => {
         console.error('error')
+        Neutralino.debug.log(`ERROR: ${(window as any).NL_CWD}/cmd/nircmd.exe ${keys}`, 'ERROR')
       }
     )
   },

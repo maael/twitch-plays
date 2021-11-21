@@ -167,9 +167,9 @@ export default function MainScreen({
             </span>
           ) : (
             <div
-              className={cls('absolute right-0 left-0 bottom-0 overflow-y-scroll px-2 py-3 flex flex-col gap-1', {
-                'top-6': settings.mode === 'anarchy',
-                'top-9': ['baron', 'democracy'].includes(settings.mode),
+              className={cls('absolute right-0 left-0 bottom-0 overflow-y-scroll px-2 pt-1 pb-3 flex flex-col gap-1', {
+                'top-8': settings.mode === 'anarchy',
+                'top-10': ['baron', 'democracy'].includes(settings.mode),
               })}
             >
               {chatEvents.map((c) => {
