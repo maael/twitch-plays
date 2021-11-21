@@ -7,7 +7,7 @@ import MainScreen from './components/screens/Main'
 import TeamsConfigScreen from './components/screens/TeamsConfigScreen'
 import ControlsConfigScreen, { ControlConfig } from './components/screens/ControlsConfig'
 import Header from './components/primitives/Header'
-import { translateActionToCommand, getMatchedActions, Settings } from './utils'
+import { translateActionToCommand, getMatchedActions, Settings, getRandomArrayItem } from './utils'
 
 /**
  * TODO: Audience division
@@ -48,13 +48,20 @@ export default function App() {
   const [client, setClient] = React.useState<ReturnType<typeof chat> | null>(null)
   const [channel, setChannel] = useStorage('channel', '', (c) => (c ? setClient(chat(c)) : null))
   const [controls, setControls] = useStorage<ControlConfig[]>('controls', DEFAULT_CONTROLS)
+  const [baron, setBaron] = useStorage<string | null>('baron', null)
   const onNewChat = React.useCallback(
     (chat: ChatItem) => {
       if (settings.mode === 'democracy') return
+      let chatBaron = baron
+      if (settings.mode === 'baron' && !chatBaron) {
+        chatBaron = chat.displayName
+        setBaron(chatBaron)
+      }
+      if (settings.mode === 'baron' && chat.displayName !== chatBaron) return
       const command = getCommandFromChat(controls, chat)
       translateActionToCommand(['default', command])
     },
-    [settings.mode, controls]
+    [settings.mode, controls, baron, setBaron]
   )
   const [chatEvents, resetChat] = useChatEvents(onNewChat)
   const chatEventsRef = React.useRef(chatEvents)
@@ -66,21 +73,30 @@ export default function App() {
   React.useEffect(() => {
     if (settings.mode === 'anarchy') return
     const interval = setInterval(() => {
-      const actions = getMatchedActions(controls, chatEventsRef.current)
-      const actionText = Object.entries(actions).map(translateActionToCommand).filter(Boolean).join(', ')
-      setLastAction(actionText)
+      if (settings.mode === 'democracy') {
+        const actions = getMatchedActions(controls, chatEventsRef.current)
+        const actionText = Object.entries(actions).map(translateActionToCommand).filter(Boolean).join(', ')
+        setLastAction(actionText)
+      } else if (settings.mode === 'baron') {
+        const users = chatEventsRef.current.map((v) => v.displayName)
+        setBaron(getRandomArrayItem(users))
+      }
       setLastCheckTime(new Date())
       resetChat()
     }, settings.waitDuration * 1000)
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [controls, settings.waitDuration, client, settings.mode])
+  }, [controls, settings.waitDuration, client, settings.mode, setBaron])
   React.useEffect(() => {
+    setLastAction(null)
+    setLastCheckTime(null)
+    setBaron(null)
     resetChat()
   }, [settings.mode])
   React.useEffect(() => {
     window['myApp'].setTitle(channel, !!client)
+    setBaron(null)
   }, [channel, client])
   return (
     <Router initialEntries={['/']}>
@@ -94,6 +110,7 @@ export default function App() {
         </Route>
         <Route path="/">
           <MainScreen
+            baron={baron}
             chatEvents={chatEvents}
             lastAction={lastAction}
             settings={settings}

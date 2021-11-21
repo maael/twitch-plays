@@ -6,7 +6,7 @@ import {
   FaKeyboard as ControlsIco,
   FaUsers as TeamIco,
 } from 'react-icons/fa'
-import { GiAnarchy as AnarchyIco } from 'react-icons/gi'
+import { GiAnarchy as AnarchyIco, GiTopHat as BaronIco } from 'react-icons/gi'
 import { Link } from 'react-router-dom'
 import cls from 'classnames'
 import { ChatItem } from '../../chat'
@@ -55,6 +55,7 @@ export default function MainScreen({
   lastCheckAt,
   isConnected,
   controls,
+  baron,
 }: {
   chatEvents: ChatItem[]
   lastAction: string | null
@@ -64,6 +65,7 @@ export default function MainScreen({
   lastCheckAt: Date | null
   isConnected: boolean
   controls: ControlConfig[]
+  baron: string | null
 }) {
   return (
     <>
@@ -85,10 +87,10 @@ export default function MainScreen({
           </div>
         </Link>
       </div>
-      <div className="grid gap-2 grid-cols-2 mt-2">
+      <div className="grid gap-2 grid-cols-3 mt-2">
         <div
           className={cls('w-full shadow-md grid grid-cols-2 items-center overflow-hidden', {
-            'opacity-60': settings.mode === 'anarchy',
+            'opacity-60 pointer-events-none': settings.mode === 'anarchy',
           })}
           title="How long to ready chat for before doing what it says in democracy mode"
         >
@@ -103,7 +105,7 @@ export default function MainScreen({
             <ClockIco /> Wait (s)
           </span>
         </div>
-        <div className="w-full shadow-md grid grid-cols-2 items-center overflow-hidden rounded-md">
+        <div className="w-full shadow-md grid grid-cols-3 items-center overflow-hidden rounded-md col-span-2">
           <button
             className={cls(
               'flex justify-center items-center gap-1 flex-1 text-center h-full w-full py-1 bg-gray-600 cursor-pointer hover:bg-purple-700',
@@ -128,9 +130,21 @@ export default function MainScreen({
           >
             <AnarchyIco /> Anarchy
           </button>
+          <button
+            className={cls(
+              'flex justify-center items-center gap-1 flex-1 text-center h-full w-full py-1 bg-gray-600 cursor-pointer hover:bg-purple-700',
+              {
+                'bg-purple-600': settings.mode === 'baron',
+              }
+            )}
+            title="During each time frame, a selected chat baron takes the wheel"
+            onClick={() => setSettings((s) => ({ ...s, mode: 'baron' }))}
+          >
+            <BaronIco /> Baron
+          </button>
         </div>
       </div>
-      <Results mode={settings.mode} config={controls} chatItems={chatEvents} />
+      <Results baron={baron} mode={settings.mode} config={controls} chatItems={chatEvents} />
       <div className="mt-2 rounded-md bg-gray-700 flex-1 flex flex-col relative overflow-hidden">
         <div className="bg-gray-600 absolute top-0 right-0 left-0 h-8 flex justify-between px-10 items-center text-white">
           <div>Last action: {lastAction || 'None'}</div>
@@ -138,7 +152,7 @@ export default function MainScreen({
             {chatEvents.length} message{chatEvents.length === 1 ? '' : 's'}
           </div>
         </div>
-        {settings.mode === 'democracy' ? (
+        {['baron', 'democracy'].includes(settings.mode) ? (
           <ProgressBar waitDuration={settings.waitDuration} timeFrom={lastCheckAt} paused={!isConnected} />
         ) : null}
         <div className="relative flex-1">
@@ -146,7 +160,7 @@ export default function MainScreen({
             <span
               className={cls('relative left-2', {
                 'top-9': settings.mode === 'anarchy',
-                'top-12': settings.mode === 'democracy',
+                'top-12': ['baron', 'democracy'].includes(settings.mode),
               })}
             >
               Logs will appear here...
@@ -155,7 +169,7 @@ export default function MainScreen({
             <div
               className={cls('absolute right-0 left-0 bottom-0 overflow-y-scroll px-2 py-3 flex flex-col gap-1', {
                 'top-6': settings.mode === 'anarchy',
-                'top-10': settings.mode === 'democracy',
+                'top-9': ['baron', 'democracy'].includes(settings.mode),
               })}
             >
               {chatEvents.map((c) => {
@@ -166,7 +180,8 @@ export default function MainScreen({
                         D
                       </span>
                     </span>
-                    <span style={{ color: c.color }}>[{c.displayName}]</span> {highlightAction(controls, c.msg)}
+                    <span style={{ color: c.color }}>[{c.displayName}]</span>{' '}
+                    {highlightAction(settings.mode, controls, c.displayName, c.msg, baron)}
                   </div>
                 )
               })}
@@ -178,13 +193,19 @@ export default function MainScreen({
   )
 }
 
-function highlightAction(controls: ControlConfig[], msg: string): React.ReactNode[] {
+function highlightAction(
+  mode: Settings['mode'],
+  controls: ControlConfig[],
+  displayName: string,
+  msg: string,
+  baron?: string | null
+): React.ReactNode[] {
   const commands = controls.map(({ command }) => command.toLowerCase())
   const words = msg.split(' ')
   const matchIdx = words.findIndex((w, i) => {
     return commands.some((c) => c === w.toLowerCase())
   }, [])
-  return matchIdx > -1
+  return ((mode === 'baron' && displayName === baron) || mode !== 'baron') && matchIdx > -1
     ? [
         words.slice(0, matchIdx).join(' '),
         <span

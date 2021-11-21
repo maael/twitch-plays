@@ -1,7 +1,7 @@
 import { ChatItem } from './chat'
 import { ControlConfig } from './components/screens/ControlsConfig'
 
-export function getTeamCommandVotes(config: ControlConfig[], chatItems: ChatItem[]) {
+export function getTeamCommandVotes(mode: Settings['mode'], config: ControlConfig[], chatItems: ChatItem[], baron?: string | null) {
   const commands = config.reduce(
     (acc, { command, team }) => ({ ...acc, [team || 'default']: (acc[team || 'default'] || []).concat(command) }),
     {}
@@ -9,7 +9,7 @@ export function getTeamCommandVotes(config: ControlConfig[], chatItems: ChatItem
   const chatCalculations = chatItems.reduce<{ [k: string]: { [k: string]: number } }>((acc, c) => {
     const team = 'default'
     const matchedCommand = (commands[team] || []).find((cmd) => c.words.some((w) => w === cmd))
-    if (!matchedCommand) return acc
+    if (!matchedCommand || mode === 'baron' && c.displayName !== baron) return acc
     const existingTeam = acc[team] || {}
     return {
       ...acc,
@@ -23,7 +23,7 @@ export function getTeamCommandVotes(config: ControlConfig[], chatItems: ChatItem
 }
 
 export function getMatchedActions(config: ControlConfig[], chatItems: ChatItem[]) {
-  const chatCalculations = getTeamCommandVotes(config, chatItems)
+  const chatCalculations = getTeamCommandVotes('democracy', config, chatItems)
   const teamActionSelections = Object.entries(chatCalculations).reduce<{
     [k: string]: ControlConfig | undefined
   }>((acc, [cmdTeam, commandWeights]) => {
@@ -86,7 +86,7 @@ export function translateActionToCommand([team, action]: [string, ControlConfig 
 export interface Settings {
   waitDuration: number
   autoConnect: boolean
-  mode: 'democracy' | 'anarchy'
+  mode: 'democracy' | 'anarchy' | 'baron'
 }
 
 let INSTANCE_ID = 1;
@@ -100,4 +100,8 @@ export function setInstance (i: number) {
 
 export function getInstance () {
   return INSTANCE_ID;
+}
+
+export function getRandomArrayItem<T> (items: T[]) {
+  return items[Math.floor(Math.random()*items.length)];
 }
